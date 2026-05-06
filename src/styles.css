@@ -1,0 +1,884 @@
+@import 'tailwindcss';
+
+/* ── LaTeX Article Theme for stig — GitHub markdown renderer ── */
+
+/* ── Computer Modern Unicode (CMU) Serif — the LaTeX font ── */
+@font-face {
+  font-family: 'CMU Serif';
+  src: url('/fonts/cmunrm.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CMU Serif';
+  src: url('/fonts/cmunsl.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CMU Serif';
+  src: url('/fonts/cmunbx.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CMU Serif';
+  src: url('/fonts/cmunbl.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* ── Custom Properties ── */
+:root {
+  --font-serif: 'CMU Serif', 'Computer Modern', Georgia, 'Times New Roman', serif;
+  --font-mono:
+    'JetBrains Mono', 'CMU Typewriter Text', 'Latin Modern Mono', 'Courier New', monospace;
+
+  --color-bg: #fdfdfd;
+  --color-text: #111;
+  --color-text-muted: #555;
+  --color-rule: #333;
+  --color-rule-light: #ccc;
+  --color-code-bg: #f5f5f0;
+  --color-code-border: #e0ddd4;
+  --color-blockquote-border: #999;
+  --color-link: #1a0dab;
+
+  --content-width: 680px;
+  --body-line-height: 1.8;
+  --body-font-size: 16px;
+}
+
+/* ── Base ── */
+html {
+  font-size: var(--body-font-size);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-serif);
+  line-height: var(--body-line-height);
+  color: var(--color-text);
+  background: var(--color-bg);
+  overflow-x: hidden;
+}
+
+/* ── Typography ── */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text);
+  margin-top: 2em;
+  margin-bottom: 0.6em;
+}
+
+h1 {
+  font-size: 1.8rem;
+}
+h2 {
+  font-size: 1.4rem;
+}
+h3 {
+  font-size: 1.15rem;
+}
+h4 {
+  font-size: 1.05rem;
+}
+
+p {
+  margin: 0 0 1em;
+  text-align: justify;
+  hyphens: auto;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* ── Horizontal Rules ── */
+hr {
+  border: none;
+  border-top: 0.5px solid var(--color-rule);
+  margin: 2em 0;
+}
+
+/* ── Code ── */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--color-code-bg);
+  padding: 0.15em 0.35em;
+  border-radius: 0;
+  word-break: break-all;
+}
+
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-code-border);
+  border-radius: 0;
+  padding: 1em 1.2em;
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  word-break: normal;
+}
+
+/* Shiki code blocks */
+.shiki {
+  background: var(--color-code-bg) !important;
+  border: 1px solid var(--color-code-border);
+  border-radius: 0;
+  padding: 1em 1.2em;
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+.shiki code {
+  background: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+/* ── Blockquotes ── */
+blockquote {
+  margin: 1.5em 0;
+  padding: 0.4em 0 0.4em 1.5em;
+  border-left: 3px solid var(--color-blockquote-border);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── GitHub-style Callouts (NOTE / TIP / IMPORTANT / WARNING / CAUTION) ── */
+.doc-callout {
+  margin: 1.5em 0;
+  padding: 0.8em 1.2em;
+  border-left: 3px solid var(--color-rule);
+  background: var(--color-code-bg);
+}
+
+.doc-callout-title {
+  font-style: italic;
+  font-weight: 700;
+  margin: 0 0 0.4em;
+  text-align: left;
+  font-size: 0.95em;
+  letter-spacing: 0.01em;
+}
+
+.doc-callout p {
+  margin: 0 0 0.6em;
+  text-align: left;
+  font-style: normal;
+  color: var(--color-text);
+}
+
+.doc-callout p:last-child {
+  margin-bottom: 0;
+}
+
+.doc-callout-note {
+  border-left-color: #1f6feb;
+}
+.doc-callout-note .doc-callout-title {
+  color: #1f6feb;
+}
+
+.doc-callout-tip {
+  border-left-color: #1a7f37;
+}
+.doc-callout-tip .doc-callout-title {
+  color: #1a7f37;
+}
+
+.doc-callout-important {
+  border-left-color: #8250df;
+}
+.doc-callout-important .doc-callout-title {
+  color: #8250df;
+}
+
+.doc-callout-warning {
+  border-left-color: #bf8700;
+}
+.doc-callout-warning .doc-callout-title {
+  color: #bf8700;
+}
+
+.doc-callout-caution {
+  border-left-color: #cf222e;
+}
+.doc-callout-caution .doc-callout-title {
+  color: #cf222e;
+}
+
+/* ── Tables (booktabs-style) ── */
+.doc-body table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.92em;
+}
+
+thead {
+  border-top: 2px solid var(--color-rule);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+thead th {
+  padding: 0.6em 0.8em;
+  text-align: left;
+  font-weight: 700;
+  font-family: var(--font-serif);
+}
+
+tbody td {
+  padding: 0.5em 0.8em;
+  border-bottom: none;
+}
+
+tbody tr:last-child {
+  border-bottom: 2px solid var(--color-rule);
+}
+
+tbody tr + tr {
+  border-top: 0.5px solid var(--color-rule-light);
+}
+
+/* ── Lists (LaTeX-style: bullet • for ul, decimal for ol) ── */
+.doc-body ul {
+  margin: 1em 0;
+  padding-left: 1.4em;
+  list-style-type: '\2013  ';
+}
+
+.doc-body ol {
+  margin: 1em 0;
+  padding-left: 1.4em;
+  list-style-type: decimal;
+}
+
+.doc-body ul ul {
+  list-style-type: '\2013  ';
+}
+.doc-body ul ul ul {
+  list-style-type: '\00B7  ';
+}
+
+.doc-body li {
+  margin-bottom: 0.3em;
+  display: list-item;
+}
+
+.doc-body li > p {
+  margin-bottom: 0.4em;
+}
+
+.doc-body li::marker {
+  font-size: 0.9em;
+}
+
+/* ── KaTeX inline math — match body text size ── */
+.doc-body .katex {
+  font-size: 1em;
+}
+
+/* ── Images ── */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/*
+ * Tailwind preflight sets `img { display: block }` which forces every inline
+ * image (badges, icons, logos) onto its own line. Restore inline flow inside
+ * the rendered article body so README badge rows look right.
+ */
+.doc-body p img,
+.doc-body p picture,
+.doc-body p a {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/*
+ * Honour the legacy `align` HTML attribute commonly used in READMEs to centre
+ * logo / badge blocks (e.g. `<p align="center">`).
+ */
+.doc-body p[align='center'],
+.doc-body div[align='center'] {
+  text-align: center;
+}
+.doc-body p[align='right'],
+.doc-body div[align='right'] {
+  text-align: right;
+}
+
+figure {
+  margin: 2em 0;
+  text-align: center;
+}
+
+figcaption {
+  font-size: 0.88em;
+  color: var(--color-text-muted);
+  margin-top: 0.5em;
+}
+
+/* ── Document Layout ── */
+.doc-layout {
+  position: relative;
+}
+
+.doc-article {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* ── Table of Contents (right margin, LaTeX style) ── */
+.doc-toc {
+  display: none;
+}
+
+@media (min-width: 1240px) {
+  .doc-toc {
+    display: block;
+    position: fixed;
+    top: 3rem;
+    right: 2rem;
+    width: 240px;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 2rem,
+      #000 calc(100% - 2rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 2rem,
+      #000 calc(100% - 2rem),
+      transparent 100%
+    );
+  }
+
+  .doc-toc::-webkit-scrollbar {
+    display: none;
+  }
+
+  .doc-toc-inner {
+    font-family: var(--font-serif);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+    padding: 1rem 0.5rem 1rem 0;
+  }
+
+  .doc-toc-title {
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    margin: 0 0 0.6em;
+    letter-spacing: 0.02em;
+  }
+
+  .doc-toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-left: 0.5px solid var(--color-rule-light);
+  }
+
+  .doc-toc-item {
+    margin: 0;
+  }
+
+  .doc-toc-item a {
+    display: flex;
+    gap: 0.5em;
+    padding: 0.15em 0 0.15em 0.8em;
+    color: inherit;
+    text-decoration: none;
+    border-left: 1.5px solid transparent;
+    margin-left: -0.75px;
+    transition:
+      color 0.12s ease,
+      border-color 0.12s ease;
+  }
+
+  .doc-toc-item a:hover {
+    color: var(--color-text);
+  }
+
+  .doc-toc-item.is-active > a {
+    color: var(--color-text);
+    border-left-color: var(--color-rule);
+  }
+
+  .doc-toc-l3 a {
+    padding-left: 1.6em;
+    font-size: 0.8rem;
+  }
+
+  .doc-toc-num {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  .doc-toc-item.is-active .doc-toc-num {
+    color: var(--color-text);
+  }
+
+  .doc-toc-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+/* ── File List (multi-file gist sidebar, left margin) ── */
+/*
+ * Layout strategy:
+ * - ≥1240px: fixed sidebar in the left margin, mirroring the TOC on the right.
+ * - <1240px: render inline above the article so navigation is still reachable
+ *   on tablets / phones / split-screen windows.
+ */
+.doc-files {
+  margin: 0 auto;
+  max-width: var(--content-width);
+  padding: 2.5rem 1.5rem 0;
+  font-family: var(--font-serif);
+  color: var(--color-text-muted);
+}
+
+.doc-files-inner {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  border: 0.5px solid var(--color-rule-light);
+  padding: 0.8rem 1rem;
+}
+
+.doc-files-title {
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--color-text);
+  margin: 0 0 0.5em;
+  letter-spacing: 0.02em;
+}
+
+.doc-files-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.doc-files-item {
+  margin: 0;
+}
+
+.doc-files-item a {
+  display: block;
+  padding: 0.15em 0;
+  color: inherit;
+  text-decoration: none;
+  word-break: break-all;
+  transition: color 0.12s ease;
+}
+
+.doc-files-item a:hover {
+  color: var(--color-text);
+}
+
+.doc-files-item.is-active > a {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+@media (min-width: 1240px) {
+  .doc-files {
+    display: block;
+    position: fixed;
+    top: 3rem;
+    left: 2rem;
+    width: 240px;
+    max-width: none;
+    max-height: calc(100vh - 4rem);
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 2rem,
+      #000 calc(100% - 2rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 2rem,
+      #000 calc(100% - 2rem),
+      transparent 100%
+    );
+  }
+
+  .doc-files::-webkit-scrollbar {
+    display: none;
+  }
+
+  .doc-files-inner {
+    border: none;
+    padding: 1rem 0 1rem 0.5rem;
+  }
+
+  .doc-files-list {
+    border-left: 0.5px solid var(--color-rule-light);
+  }
+
+  .doc-files-item a {
+    padding: 0.15em 0 0.15em 0.8em;
+    border-left: 1.5px solid transparent;
+    margin-left: -0.75px;
+    transition:
+      color 0.12s ease,
+      border-color 0.12s ease;
+  }
+
+  .doc-files-item.is-active > a {
+    border-left-color: var(--color-rule);
+  }
+}
+
+/* ── Document Frontmatter (\maketitle) ── */
+.doc-frontmatter {
+  text-align: center;
+  margin-bottom: 4em;
+  padding-bottom: 0;
+}
+
+.doc-frontmatter h1 {
+  font-size: 2rem;
+  margin-top: 0;
+  margin-bottom: 0.3em;
+  line-height: 1.25;
+}
+
+.doc-frontmatter p {
+  text-align: center;
+  color: var(--color-text-muted);
+  margin: 0.2em 0;
+  font-size: 0.95em;
+}
+
+/* ── Document Body (prose) ── */
+.doc-body h2 {
+  margin-top: 2.5em;
+  padding-bottom: 0.2em;
+  border-bottom: 0.5px solid var(--color-rule-light);
+}
+
+.doc-body h3 {
+  margin-top: 1.8em;
+}
+
+.doc-body > *:first-child {
+  margin-top: 0;
+}
+
+/* ── Heading anchor links ── */
+.heading-anchor {
+  scroll-margin-top: 1em;
+}
+
+.heading-anchor .heading-link {
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+}
+
+.heading-anchor .heading-link::before {
+  content: '#';
+  position: absolute;
+  left: -0.85em;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.heading-anchor:hover .heading-link::before,
+.heading-anchor .heading-link:focus::before {
+  opacity: 0.6;
+}
+
+/* ── Status Badges (unused) ── */
+.doc-status-badge {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.doc-status-badge[data-status='mainnet'] {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── Mermaid Diagrams ── */
+.doc-body pre.mermaid {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.doc-body .mermaid-rendered {
+  display: flex;
+  justify-content: center;
+  margin: 2em 0;
+  overflow-x: auto;
+  cursor: zoom-in;
+  border: 1px solid transparent;
+  border-radius: 0;
+  padding: 0.5em;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.doc-body .mermaid-rendered:hover {
+  border-color: var(--color-rule-light);
+  background: var(--color-code-bg);
+}
+
+.doc-body .mermaid-rendered svg {
+  max-width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.doc-body pre.mermaid-error {
+  border-color: #d8a0a0;
+  color: #a00;
+}
+
+/* ── Zoom Modal (shared by Mermaid + Images) ── */
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  z-index: 9999;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  outline: none;
+  backdrop-filter: blur(2px);
+}
+
+.zoom-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.zoom-inner {
+  display: inline-flex;
+  transform-origin: center center;
+  will-change: transform;
+  user-select: none;
+}
+
+.zoom-inner svg,
+.zoom-inner .zoom-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
+
+.zoom-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--color-rule-light);
+  border-radius: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.zoom-close:hover {
+  background: var(--color-code-bg);
+}
+
+/* ── Zoomable Document Images ── */
+.doc-body img.doc-image-zoomable {
+  cursor: zoom-in;
+  transition: outline-color 0.15s ease;
+  outline: 1px solid transparent;
+  outline-offset: 2px;
+}
+
+.doc-body img.doc-image-zoomable:hover {
+  outline-color: var(--color-rule-light);
+}
+
+/* ── Search Highlights ── */
+mark {
+  background: #fff3b0;
+  color: inherit;
+  padding: 0.05em 0.1em;
+  border-radius: 0;
+}
+
+/* ── User Highlights (CSS Custom Highlight API) ── */
+::highlight(user-highlight) {
+  background-color: #fff3b0;
+  color: inherit;
+}
+
+/* ── Index Page ── */
+.index-page .doc-frontmatter {
+  margin-bottom: 1.5em;
+}
+
+.index-form {
+  display: flex;
+  gap: 0.5em;
+  margin-top: 1em;
+  flex-wrap: wrap;
+}
+
+.index-form-input {
+  flex: 1 1 22rem;
+  font-family: var(--font-serif);
+  font-size: 0.95em;
+  padding: 0.4em 0.8em;
+  border: 1px solid var(--color-rule-light);
+  border-radius: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+}
+
+.index-form-submit {
+  font-family: var(--font-serif);
+  font-size: 0.95em;
+  padding: 0.4em 1em;
+  border: 1px solid var(--color-rule);
+  border-radius: 0;
+  background: var(--color-text);
+  color: var(--color-bg);
+  cursor: pointer;
+}
+
+.index-form-error {
+  color: #a00;
+  margin-top: 0.6em;
+  font-size: 0.9em;
+}
+
+/* ── URL Mapping Block ── */
+.index-mapping .index-mapping-host {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.index-mapping .index-mapping-path {
+  color: #999;
+}
+
+/* ── Configuration Table ── */
+/*
+ * Inline `<code>` globally uses `word-break: break-all` which is right for
+ * long URLs in prose but breaks short identifier tokens in narrow table cells
+ * (e.g. "description" → "descriptio\nn"). Keep them whole here.
+ */
+.index-config td code,
+.index-config th code {
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+/* ── Visually Hidden (screen readers only) ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
