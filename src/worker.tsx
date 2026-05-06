@@ -3,7 +3,7 @@ import { ImageResponse } from 'takumi-js/response'
 import wasmModule, { initSync, Renderer } from 'takumi-js/wasm'
 import { OgCard, OgIndex } from './lib/Og'
 import * as Source from './lib/Source'
-import * as SourceFns from './lib/Source.fns'
+import * as SourceFetch from './lib/Source.fetch'
 // @ts-expect-error bytes import
 import cmunrmData from '../public/fonts/cmunrm-clean.ttf?bytes'
 // @ts-expect-error bytes import
@@ -55,7 +55,7 @@ export default {
             headers: { ...ogCacheHeaders, 'Content-Type': 'image/png' },
           })
 
-        const doc = await SourceFns.get({ data: source })
+        const doc = await SourceFetch.fetchDocument(source)
         const res = new ImageResponse(
           <OgCard title={doc.title} source={Source.shortLabel(source)} />,
           { width: 1200, height: 630, renderer, headers: ogCacheHeaders },

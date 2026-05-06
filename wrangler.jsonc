@@ -16,15 +16,5 @@
 			"id": "e43350f27c254d98a910408218b93ac9"
 		},
 	],
-	"workers_dev": false,
-	"routes": [
-		{
-			"pattern": "stig.sh",
-			"zone_name": "stig.sh",
-		},
-		{
-			"pattern": "stig.sh/*",
-			"zone_name": "stig.sh",
-		},
-	],
-}
+	"workers_dev": true,
+	}
