@@ -129,7 +129,8 @@ code {
   background: var(--color-code-bg);
   padding: 0.15em 0.35em;
   border-radius: 0;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 pre {
@@ -859,14 +860,8 @@ mark {
 }
 
 /* ── Configuration Table ── */
-/*
- * Inline `<code>` globally uses `word-break: break-all` which is right for
- * long URLs in prose but breaks short identifier tokens in narrow table cells
- * (e.g. "description" → "descriptio\nn"). Keep them whole here.
- */
 .index-config td code,
 .index-config th code {
-  word-break: keep-all;
   white-space: nowrap;
 }
 
