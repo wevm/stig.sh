@@ -16,34 +16,42 @@ import * as StigConfig from './StigConfig'
  * file list) and github/repo sources (driven by `stig.json`'s `sidebar`).
  */
 export type Sibling = {
-  /** Display text — filename for gists, custom label from `stig.json` for repos. */
-  text: string
   /** Whether this entry is the one currently being rendered. */
   current: boolean
   /** Internal stig.sh path. */
   path: string
+  /** Display text — filename for gists, custom label from `stig.json` for repos. */
+  text: string
 }
 
 export type Document = {
-  source: Source.Source
-  /** Resolved filename being rendered (mostly relevant for gists). */
-  filename: string
   /** Markdown content. */
   content: string
-  /** Rendered HTML. */
-  html: string
-  /** Title — config override > first H1 > gist description > filename. */
-  title: string
-  /** Plain-text description (first ~160 chars), or config override. */
-  description: string
-  /** Resolved commit SHA (used for cache key + display). */
-  sha: string
-  /** Human-facing source URL. */
-  sourceUrl: string
   /** ISO date of the most recent change to this document. */
   date: string | null
+  /** Plain-text description (first ~160 chars), or config override. */
+  description: string
+  /** Resolved filename being rendered (mostly relevant for gists). */
+  filename: string
+  /** Show the document header. From `stig.json`; null = use default. */
+  header: boolean | null
+  /** Rendered HTML. */
+  html: string
+  /** Forced colour scheme. From `stig.json`; null = use default. */
+  scheme: StigConfig.Scheme | null
+  /** Resolved commit SHA (used for cache key + display). */
+  sha: string
   /** Sidebar entries (gist siblings or repo `stig.json` sidebar). */
   siblings: Sibling[] | null
+  source: Source.Source
+  /** Human-facing source URL. */
+  sourceUrl: string
+  /** Visual theme. From `stig.json`; null = use default. */
+  theme: StigConfig.Theme | null
+  /** Title — config override > first H1 > gist description > filename. */
+  title: string
+  /** Show the table of contents. From `stig.json`; null = use default. */
+  toc: boolean | null
 }
 
 async function kv(): Promise<KVNamespace> {
@@ -76,34 +84,50 @@ async function withToken(headers: Record<string, string>): Promise<Record<string
  */
 type Fetched = {
   content: string
-  sha: string
-  filename: string
   date: string | null
   description: string | null
+  filename: string
+  sha: string
   siblings: Sibling[] | null
 }
 
-/** Fetch a markdown file from GitHub via the contents API (gives us SHA + content in one call). */
-async function fetchGithub(s: Source.GitHubSource): Promise<Fetched> {
-  const path = s.path.split('/').map(encodeURIComponent).join('/')
-  const ref = encodeURIComponent(s.ref)
-  const headers = await withToken(ghHeaders())
+function base64ToUtf8(content: string): string {
+  const binary = atob(content.replace(/\n/g, ''))
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+  return new TextDecoder('utf-8').decode(bytes)
+}
 
-  const [contentRes, commitRes] = await Promise.all([
-    fetch(`https://api.github.com/repos/${s.owner}/${s.repo}/contents/${path}?ref=${ref}`, {
-      headers,
-    }),
-    fetch(
-      `https://api.github.com/repos/${s.owner}/${s.repo}/commits?path=${path}&sha=${ref}&per_page=1`,
-      { headers },
-    ),
-  ])
+function filenameFromPath(path: string): string {
+  return path.split('/').filter(Boolean).at(-1) ?? path
+}
+
+function shaFromEtag(etag: string | null): string | null {
+  const trimmed = etag?.trim()
+  if (!trimmed) return null
+  return trimmed.replace(/^W\//, '').replace(/^"|"$/g, '') || null
+}
+
+async function shaFromContent(content: string): Promise<string> {
+  const bytes = new TextEncoder().encode(content)
+  const hash = await crypto.subtle.digest('SHA-256', bytes)
+  return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function fetchGithubViaApi(
+  s: Source.GitHubSource,
+  args: { path: string; ref: string; headers: Record<string, string> },
+): Promise<Pick<Fetched, 'content' | 'filename' | 'sha'>> {
+  const contentRes = await fetch(
+    `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${args.path}?ref=${args.ref}`,
+    { headers: args.headers },
+  )
 
   if (!contentRes.ok) {
     if (contentRes.status === 404)
       throw new Error(`File not found on GitHub: ${s.owner}/${s.repo}@${s.ref}/${s.path}`)
     throw new Error(`GitHub API error (${contentRes.status}) fetching ${s.path}`)
   }
+
   const data = (await contentRes.json()) as {
     content?: string
     encoding?: string
@@ -113,22 +137,57 @@ async function fetchGithub(s: Source.GitHubSource): Promise<Fetched> {
   if (!data.content || data.encoding !== 'base64')
     throw new Error('Unexpected GitHub response shape')
 
+  return {
+    content: base64ToUtf8(data.content),
+    filename: data.name,
+    sha: data.sha,
+  }
+}
+
+/** Fetch a markdown file from GitHub, preferring raw content over rate-limited API content. */
+async function fetchGithub(s: Source.GitHubSource): Promise<Fetched> {
+  const path = s.path.split('/').map(encodeURIComponent).join('/')
+  const ref = encodeURIComponent(s.ref)
+  const headers = await withToken(ghHeaders())
+  const rawHeaders = {
+    Accept: 'text/plain, text/markdown, */*',
+    'User-Agent': 'stig',
+  }
+
+  const [rawRes, commitRes] = await Promise.all([
+    fetch(Source.rawUrl(s), { headers: rawHeaders }),
+    fetch(
+      `https://api.github.com/repos/${s.owner}/${s.repo}/commits?path=${path}&sha=${ref}&per_page=1`,
+      { headers },
+    ).catch(() => null),
+  ])
+
+  const fetched = rawRes.ok
+    ? {
+        content: await rawRes.text(),
+        filename: filenameFromPath(s.path),
+        sha: shaFromEtag(rawRes.headers.get('etag')),
+      }
+    : await fetchGithubViaApi(s, { path, ref, headers })
+
+  const content = fetched.content
+  const sha = fetched.sha ?? (await shaFromContent(content))
+  const filename = fetched.filename
+
   let date: string | null = null
-  if (commitRes.ok) {
+  if (commitRes?.ok) {
     const commits = (await commitRes.json()) as Array<{
       commit?: { committer?: { date?: string } }
     }>
     date = commits[0]?.commit?.committer?.date ?? null
   }
 
-  const binary = atob(data.content.replace(/\n/g, ''))
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
   return {
-    content: new TextDecoder('utf-8').decode(bytes),
-    sha: data.sha,
-    filename: data.name,
+    content,
     date,
     description: null,
+    filename,
+    sha,
     siblings: null,
   }
 }
@@ -169,14 +228,12 @@ async function fetchRepo(s: Source.GitHubRepoSource): Promise<Fetched> {
     date = commits[0]?.commit?.committer?.date ?? null
   }
 
-  const binary = atob(data.content.replace(/\n/g, ''))
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
   return {
-    content: new TextDecoder('utf-8').decode(bytes),
-    sha: data.sha,
-    filename: data.name,
+    content: base64ToUtf8(data.content),
     date,
     description: null,
+    filename: data.name,
+    sha: data.sha,
     siblings: null,
   }
 }
@@ -220,18 +277,18 @@ async function fetchGist(s: Source.GistSource): Promise<Fetched> {
   const siblings: Sibling[] | null =
     markdownFiles.length > 1
       ? markdownFiles.map((f) => ({
-          text: f.filename,
           current: f.filename === picked.filename,
           path: `/${s.user}/${s.id}/${encodeURIComponent(f.filename)}`,
+          text: f.filename,
         }))
       : null
 
   return {
     content: picked.content,
-    sha,
-    filename: picked.filename,
     date,
     description,
+    filename: picked.filename,
+    sha,
     siblings,
   }
 }
@@ -325,7 +382,7 @@ function stripLeadingTitle(md: string): string {
 }
 
 const TYPE_KEY = 'doc:html'
-const TYPE_VERSION = 'v17'
+const TYPE_VERSION = 'v19'
 
 function fetchSource(source: Source.Source): Promise<Fetched> {
   switch (source.kind) {
@@ -367,14 +424,14 @@ function siblingsFromConfig(
     const target: Source.GitHubSource = {
       kind: 'github',
       owner: source.owner,
-      repo: source.repo,
-      ref,
       path: entry.path,
+      ref,
+      repo: source.repo,
     }
     return {
-      text: entry.text,
       current: entry.path === currentPath,
       path: `/${Source.toPath(target)}`,
+      text: entry.text,
     }
   })
 }
@@ -432,17 +489,19 @@ export async function fetchDocument(source: Source.Source): Promise<Document> {
   const siblings = siblingsFromConfig(source, config, currentRepoPath) ?? fetched.siblings
 
   return {
-    source,
-    filename: fetched.filename,
     content: fetched.content,
-    html,
-    title,
-    description,
-    sha: fetched.sha,
-    sourceUrl: Source.sourceUrl(source),
     date: fetched.date,
+    description,
+    filename: fetched.filename,
+    header: config?.header ?? null,
+    html,
+    scheme: config?.scheme ?? null,
+    sha: fetched.sha,
     siblings,
+    source,
+    sourceUrl: Source.sourceUrl(source),
+    theme: config?.theme ?? null,
+    title,
+    toc: config?.toc ?? null,
   }
 }
-
-

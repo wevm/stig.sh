@@ -17,7 +17,7 @@ let highlighterPromise: Promise<Highlighter> | null = null
 function getHighlighter() {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
-      themes: ['github-light'],
+      themes: ['github-light', 'github-dark'],
       langs: [
         'bash',
         'c',
@@ -110,14 +110,24 @@ function rehypeShiki() {
 
       // Defensive: even with the alias map, an exotic language could slip
       // through and throw. Falling back to plain text keeps the page rendering.
+      // Dual-theme output: shiki emits both palettes as CSS variables
+      // (`--shiki-light`, `--shiki-dark` and their `*-bg` counterparts) and
+      // writes no inline `color` so the page's `[data-color-scheme]` rules
+      // (and the `prefers-color-scheme` media query for `light dark`) decide
+      // which palette to use. A single cached HTML string serves all schemes.
       let highlighted: string
       try {
         highlighted = highlighter.codeToHtml(code, {
+          defaultColor: false,
           lang: resolvedLang,
-          theme: 'github-light',
+          themes: { dark: 'github-dark', light: 'github-light' },
         })
       } catch {
-        highlighted = highlighter.codeToHtml(code, { lang: 'text', theme: 'github-light' })
+        highlighted = highlighter.codeToHtml(code, {
+          defaultColor: false,
+          lang: 'text',
+          themes: { dark: 'github-dark', light: 'github-light' },
+        })
       }
 
       if (parent && typeof index === 'number') {

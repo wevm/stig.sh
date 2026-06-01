@@ -9,19 +9,43 @@
  */
 
 export type SidebarEntry = {
-  /** Display text shown in the sidebar. */
-  text: string
   /** Repo-relative path to a markdown file (e.g. `docs/setup.md`). */
   path: string
+  /** Display text shown in the sidebar. */
+  text: string
 }
 
+/**
+ * `'light dark'` (the default) honours the user's `prefers-color-scheme`,
+ * matching the CSS `color-scheme` property values. `'light'` / `'dark'` force
+ * a single palette regardless of the user's OS preference.
+ */
+export type Scheme = 'dark' | 'light' | 'light dark'
+
+/**
+ * Visual theme.
+ *  - `'scientific'` (default): LaTeX-style — Computer Modern serif, justified
+ *    body, booktabs tables, footnotes-as-citations.
+ *  - `'geist'`: Vercel's Geist sans + Geist Mono, left-aligned body, modern
+ *    spacing — closer to a typical web article.
+ */
+export type Theme = 'geist' | 'scientific'
+
 export type StigConfig = {
-  /** Override the page/OG title. Defaults to the first H1 in the document. */
-  title?: string
   /** Override the OG/meta description. Defaults to the first ~200 chars of the rendered content. */
   description?: string
+  /** Show the document header (title + date + "View on GitHub"). Defaults to true. */
+  header?: boolean
+  /** Force a colour scheme, or honour the user's `prefers-color-scheme`. Defaults to `light dark`. */
+  scheme?: Scheme
   /** Explicit sidebar entries. Repo-only (gists list siblings automatically). */
   sidebar?: SidebarEntry[]
+  /** Visual theme. Defaults to `scientific`. */
+  theme?: Theme
+  /** Override the page/OG title. Defaults to the first H1 in the document. */
+  title?: string
+  /** Show the table of contents (right rail). Defaults to true. */
+  toc?: boolean
 }
 
 /**
@@ -33,19 +57,24 @@ export function parse(value: unknown): StigConfig | null {
   const v = value as Record<string, unknown>
   const out: StigConfig = {}
 
-  if (typeof v.title === 'string' && v.title.trim()) out.title = v.title.trim()
   if (typeof v.description === 'string' && v.description.trim())
     out.description = v.description.trim()
+  if (typeof v.header === 'boolean') out.header = v.header
+  if (v.scheme === 'dark' || v.scheme === 'light' || v.scheme === 'light dark')
+    out.scheme = v.scheme
+  if (v.theme === 'geist' || v.theme === 'scientific') out.theme = v.theme
+  if (typeof v.title === 'string' && v.title.trim()) out.title = v.title.trim()
+  if (typeof v.toc === 'boolean') out.toc = v.toc
 
   if (Array.isArray(v.sidebar)) {
     const sidebar: SidebarEntry[] = []
     for (const raw of v.sidebar) {
       if (!raw || typeof raw !== 'object') continue
       const entry = raw as Record<string, unknown>
-      const text = typeof entry.text === 'string' ? entry.text.trim() : ''
       const path = typeof entry.path === 'string' ? entry.path.trim() : ''
+      const text = typeof entry.text === 'string' ? entry.text.trim() : ''
       if (!text || !path) continue
-      sidebar.push({ text, path: path.replace(/^\/+/, '') })
+      sidebar.push({ path: path.replace(/^\/+/, ''), text })
     }
     if (sidebar.length > 0) out.sidebar = sidebar
   }

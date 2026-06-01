@@ -169,14 +169,35 @@ Drop a `stig.json` at your repository root to customise the rendering:
 
 ```json
 {
-  "title": "My Project",
   "description": "A short, plain-text summary used for OG meta + the page title.",
+  "header": true,
+  "scheme": "light dark",
   "sidebar": [
-    { "text": "Introduction", "path": "README.md" },
-    { "text": "Architecture", "path": "docs/architecture.md" },
-    { "text": "Contributing", "path": "CONTRIBUTING.md" }
-  ]
+    { "path": "README.md", "text": "Introduction" },
+    { "path": "docs/architecture.md", "text": "Architecture" },
+    { "path": "CONTRIBUTING.md", "text": "Contributing" }
+  ],
+  "theme": "scientific",
+  "title": "My Project",
+  "toc": true
 }
 ```
 
 All fields are optional. Without `sidebar`, the article renders edge-to-edge. With it, the listed files become a fixed left rail (≥1240px) or a collapsible header on smaller screens.
+
+| Field    | Type                                | Default      | Description                                                                                  |
+| -------- | ----------------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| `header` | `boolean`                           | `true`       | Show the document header (title, date, "View on GitHub").                                    |
+| `scheme` | `"dark" \| "light" \| "light dark"` | `light dark` | Force a palette, or `light dark` to honour the user's `prefers-color-scheme`.                |
+| `theme`  | `"geist" \| "scientific"`           | `scientific` | Visual theme. `scientific` is the LaTeX look; `geist` uses Vercel's Geist family.            |
+| `toc`    | `boolean`                           | `true`       | Show the right-rail table of contents.                                                       |
+
+### Per-request overrides
+
+The same options can be set as URL search params, which take precedence over `stig.json`:
+
+```
+https://stig.sh/wevm/stig.sh?header=false&scheme=dark&theme=geist&toc=false
+```
+
+Useful for embedding stig pages in iframes or sharing a stripped-down view without changing the repo config.

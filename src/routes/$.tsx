@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound, redirect } from '@tanstack/react-router'
+import { parseAsBoolean, parseAsStringLiteral, useQueryState } from 'nuqs'
 import { useEffect, useMemo, useState } from 'react'
 import * as Config from '#/lib/Config'
 import { Highlights } from '#/lib/Highlights'
@@ -6,6 +7,10 @@ import { ImageZoom } from '#/lib/ImageZoom'
 import { Mermaid } from '#/lib/Mermaid'
 import * as Source from '#/lib/Source'
 import * as SourceFns from '#/lib/Source.fns'
+import type { Scheme, Theme } from '#/lib/StigConfig'
+
+const schemeParser = parseAsStringLiteral(['dark', 'light', 'light dark'] as const)
+const themeParser = parseAsStringLiteral(['geist', 'scientific'] as const)
 
 export const Route = createFileRoute('/$')({
   loader: async ({ params }) => {
@@ -44,14 +49,10 @@ export const Route = createFileRoute('/$')({
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:image', content: `${Config.baseUrl}${ogPath}` },
       ],
+      // Font preloads + Google Fonts links live in `__root.tsx` so the
+      // index page also gets them. Doc page only adds doc-specific links.
       links: [
         { rel: 'canonical', href: url },
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap',
-        },
         {
           rel: 'stylesheet',
           href: 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css',
@@ -68,26 +69,55 @@ function DocPage() {
   const doc = Route.useLoaderData()
   const headings = useMemo(() => extractHeadings(doc.html), [doc.html])
 
+  // Search params override `stig.json`, which overrides the built-in defaults.
+  // `null` from nuqs means the param wasn't set — fall through to config/default.
+  const [headerParam] = useQueryState('header', parseAsBoolean)
+  const [schemeParam] = useQueryState('scheme', schemeParser)
+  const [themeParam] = useQueryState('theme', themeParser)
+  const [tocParam] = useQueryState('toc', parseAsBoolean)
+
+  // `'light dark'` honours the user's `prefers-color-scheme` (CSS-driven).
+  const scheme: Scheme = schemeParam ?? doc.scheme ?? 'light dark'
+  const showHeader = headerParam ?? doc.header ?? true
+  const showToc = tocParam ?? doc.toc ?? true
+  const theme: Theme = themeParam ?? doc.theme ?? 'scientific'
+
+  useEffect(() => {
+    const root = document.documentElement
+    const previousScheme = root.dataset.scheme
+    const previousTheme = root.dataset.theme
+    root.dataset.scheme = scheme
+    root.dataset.theme = theme
+    return () => {
+      if (previousScheme === undefined) delete root.dataset.scheme
+      else root.dataset.scheme = previousScheme
+      if (previousTheme === undefined) delete root.dataset.theme
+      else root.dataset.theme = previousTheme
+    }
+  }, [scheme, theme])
+
   return (
     <div className="doc-layout">
       <FileList files={doc.siblings} />
       <main className="doc-article">
         <article>
-          <header className="doc-frontmatter">
-            <h1>{doc.title}</h1>
-            <p style={{ fontSize: '0.85em' }}>
-              {doc.date && <span>{formatDate(doc.date)}</span>}
-              {doc.date && ' · '}
-              <a href={doc.sourceUrl} target="_blank" rel="noopener noreferrer">
-                View on GitHub
-              </a>
-            </p>
-          </header>
+          {showHeader && (
+            <header className="doc-frontmatter">
+              <h1>{doc.title}</h1>
+              <p style={{ fontSize: '0.85em' }}>
+                {doc.date && <span>{formatDate(doc.date)}</span>}
+                {doc.date && ' · '}
+                <a href={doc.sourceUrl} target="_blank" rel="noopener noreferrer">
+                  View on GitHub
+                </a>
+              </p>
+            </header>
+          )}
 
           <div className="doc-body" dangerouslySetInnerHTML={{ __html: doc.html }} />
         </article>
       </main>
-      <TableOfContents headings={headings} />
+      {showToc && <TableOfContents headings={headings} />}
       <Highlights targetSelector=".doc-body" />
       <Mermaid targetSelector=".doc-body" />
       <ImageZoom targetSelector=".doc-body" />
@@ -127,7 +157,7 @@ function ErrorView({ error }: { error: Error }) {
   )
 }
 
-type Sibling = { text: string; current: boolean; path: string }
+type Sibling = { current: boolean; path: string; text: string }
 
 function FileList({ files }: { files: Sibling[] | null }) {
   if (!files || files.length < 2) return null

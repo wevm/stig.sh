@@ -8,49 +8,292 @@
   src: url('/fonts/cmunrm.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
 }
 @font-face {
   font-family: 'CMU Serif';
   src: url('/fonts/cmunsl.ttf') format('truetype');
   font-style: italic;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
 }
 @font-face {
   font-family: 'CMU Serif';
   src: url('/fonts/cmunbx.ttf') format('truetype');
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: optional;
 }
 @font-face {
   font-family: 'CMU Serif';
   src: url('/fonts/cmunbl.ttf') format('truetype');
   font-style: italic;
   font-weight: 700;
-  font-display: swap;
+  font-display: optional;
 }
 
 /* ── Custom Properties ── */
+/*
+ * Geist Design System color tokens (light values). Mirror of the public
+ * `--ds-*` palette from https://vercel.com/geist/colors so we can reference
+ * them by the same names without depending on the `geist` npm package.
+ *
+ * Local semantic vars (`--color-*`) are aliases over the Geist tokens —
+ * dark mode only needs to override the `--ds-*` values to recolour the
+ * whole page.
+ */
 :root {
   --font-serif: 'CMU Serif', 'Computer Modern', Georgia, 'Times New Roman', serif;
   --font-mono:
     'JetBrains Mono', 'CMU Typewriter Text', 'Latin Modern Mono', 'Courier New', monospace;
 
-  --color-bg: #fdfdfd;
-  --color-text: #111;
-  --color-text-muted: #555;
-  --color-rule: #333;
-  --color-rule-light: #ccc;
-  --color-code-bg: #f5f5f0;
-  --color-code-border: #e0ddd4;
-  --color-blockquote-border: #999;
-  --color-link: #1a0dab;
+  /* Geist tokens — light. */
+  --ds-background-100: hsl(0 0% 100%);
+  --ds-background-200: hsl(0 0% 98%);
+  --ds-blue-700: hsl(212 100% 48%);
+  --ds-blue-900: hsl(211 100% 42%);
+  --ds-gray-100: hsl(0 0% 95%);
+  --ds-gray-200: hsl(0 0% 92%);
+  --ds-gray-300: hsl(0 0% 90%);
+  --ds-gray-400: hsl(0 0% 92%);
+  --ds-gray-500: hsl(0 0% 79%);
+  --ds-gray-600: hsl(0 0% 66%);
+  --ds-gray-700: hsl(0 0% 56%);
+  --ds-gray-800: hsl(0 0% 49%);
+  --ds-gray-900: hsl(0 0% 30%);
+  --ds-gray-1000: hsl(0 0% 9%);
+  --ds-gray-alpha-100: #0000000d;
+  --ds-gray-alpha-200: #00000015;
+  --ds-gray-alpha-300: #0000001a;
+  --ds-gray-alpha-400: #00000014;
+  --ds-gray-alpha-500: #00000036;
+  --ds-gray-alpha-600: #00000057;
+  --ds-gray-alpha-700: #00000070;
+  --ds-gray-alpha-800: #00000082;
+  --ds-gray-alpha-900: #000000b3;
+  --ds-gray-alpha-1000: #000000e8;
+
+  /* Semantic aliases. */
+  --color-bg: var(--ds-background-100);
+  --color-blockquote-border: var(--ds-gray-500);
+  --color-code-bg: var(--ds-gray-alpha-100);
+  --color-code-border: var(--ds-gray-alpha-400);
+  --color-heading: var(--color-text);
+  --color-link: var(--ds-blue-700);
+  --color-rule: var(--ds-gray-700);
+  --color-rule-light: var(--ds-gray-300);
+  --color-text: var(--ds-gray-1000);
+  --color-text-muted: var(--ds-gray-900);
 
   --content-width: 680px;
   --body-line-height: 1.8;
   --body-font-size: 16px;
+}
+
+/*
+ * Dark palette — applied in three cases:
+ *   1. `data-scheme="dark"` (forced dark)
+ *   2. `data-scheme="light dark"` + user prefers dark (the default)
+ *   3. attribute missing entirely + user prefers dark (SSR / pre-hydration)
+ *
+ * Selectors stay split so the media query only fires when the page hasn't
+ * been pinned to `light` or `dark`.
+ */
+:root[data-scheme='dark'] {
+  color-scheme: dark;
+  --ds-background-100: hsl(0 0% 4%);
+  --ds-background-200: hsl(0 0% 0%);
+  --ds-blue-900: hsl(210 100% 66%);
+  --ds-gray-100: hsl(0 0% 10%);
+  --ds-gray-200: hsl(0 0% 12%);
+  --ds-gray-300: hsl(0 0% 16%);
+  --ds-gray-400: hsl(0 0% 18%);
+  --ds-gray-500: hsl(0 0% 27%);
+  --ds-gray-600: hsl(0 0% 53%);
+  --ds-gray-700: hsl(0 0% 56%);
+  --ds-gray-800: hsl(0 0% 49%);
+  --ds-gray-900: hsl(0 0% 63%);
+  --ds-gray-1000: hsl(0 0% 93%);
+  --ds-gray-alpha-100: #ffffff0f;
+  --ds-gray-alpha-200: #ffffff17;
+  --ds-gray-alpha-300: #ffffff21;
+  --ds-gray-alpha-400: #ffffff24;
+  --ds-gray-alpha-500: #ffffff3d;
+  --ds-gray-alpha-600: #ffffff82;
+  --ds-gray-alpha-700: #ffffff8a;
+  --ds-gray-alpha-800: #ffffff78;
+  --ds-gray-alpha-900: #ffffff9c;
+  --ds-gray-alpha-1000: #ffffffeb;
+  /* Brand-blue stays dark in dark mode; use blue-900 (lighter) for links. */
+  --color-heading: #fff;
+  --color-link: var(--ds-blue-900);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme='light']):not([data-scheme='dark']) {
+    color-scheme: dark;
+    --ds-background-100: hsl(0 0% 4%);
+    --ds-background-200: hsl(0 0% 0%);
+    --ds-blue-900: hsl(210 100% 66%);
+    --ds-gray-100: hsl(0 0% 10%);
+    --ds-gray-200: hsl(0 0% 12%);
+    --ds-gray-300: hsl(0 0% 16%);
+    --ds-gray-400: hsl(0 0% 18%);
+    --ds-gray-500: hsl(0 0% 27%);
+    --ds-gray-600: hsl(0 0% 53%);
+    --ds-gray-700: hsl(0 0% 56%);
+    --ds-gray-800: hsl(0 0% 49%);
+    --ds-gray-900: hsl(0 0% 63%);
+    --ds-gray-1000: hsl(0 0% 93%);
+    --ds-gray-alpha-100: #ffffff0f;
+    --ds-gray-alpha-200: #ffffff17;
+    --ds-gray-alpha-300: #ffffff21;
+    --ds-gray-alpha-400: #ffffff24;
+    --ds-gray-alpha-500: #ffffff3d;
+    --ds-gray-alpha-600: #ffffff82;
+    --ds-gray-alpha-700: #ffffff8a;
+    --ds-gray-alpha-800: #ffffff78;
+    --ds-gray-alpha-900: #ffffff9c;
+    --ds-gray-alpha-1000: #ffffffeb;
+    --color-heading: #fff;
+    --color-link: var(--ds-blue-900);
+  }
+}
+
+/*
+ * Shiki dual-theme: `defaultColor: false` means spans carry only CSS vars
+ * (no inline `color`). Default to the light palette; swap to dark under the
+ * same conditions as the colour vars above.
+ */
+.shiki,
+.shiki span {
+  color: var(--shiki-light) !important;
+  background-color: var(--shiki-light-bg) !important;
+}
+
+:root[data-scheme='dark'] .shiki,
+:root[data-scheme='dark'] .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme='light']):not([data-scheme='dark']) .shiki,
+  :root:not([data-scheme='light']):not([data-scheme='dark']) .shiki span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+  }
+}
+
+/*
+ * ── `geist` theme ──────────────────────────────────────────────────────
+ * Opt-in via `?theme=geist` or `stig.json`. Swaps the LaTeX-style Computer
+ * Modern look for Vercel's Geist family and "normal" web-article
+ * conventions: left-aligned body, default list markers, plain tables,
+ * non-italic blockquotes. Geist + Geist Mono load via the route's Google
+ * Fonts link with `font-display: optional`.
+ */
+:root[data-theme='geist'] {
+  --font-serif:
+    'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    'Geist Mono', ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --body-line-height: 1.65;
+  --content-width: 720px;
+}
+
+[data-theme='geist'] h1,
+[data-theme='geist'] h2,
+[data-theme='geist'] h3,
+[data-theme='geist'] h4,
+[data-theme='geist'] h5,
+[data-theme='geist'] h6 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 1.6em;
+  margin-bottom: 0.5em;
+}
+
+[data-theme='geist'] h1 {
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+[data-theme='geist'] h2 {
+  font-size: 1.5rem;
+}
+[data-theme='geist'] h3 {
+  font-size: 1.2rem;
+}
+
+[data-theme='geist'] p {
+  text-align: left;
+  hyphens: manual;
+}
+
+/* Slightly mute prose text — easier on the eyes in long articles. Headings
+ * and other UI text keep the full `--color-text` for hierarchy. */
+[data-theme='geist'] .doc-body p,
+[data-theme='geist'] .doc-body li {
+  color: color-mix(in oklch, var(--color-text) 82%, var(--color-bg));
+}
+
+/* Left-align the title block (LaTeX-centred is too formal for this theme). */
+[data-theme='geist'] .doc-frontmatter,
+[data-theme='geist'] .doc-frontmatter p {
+  text-align: left;
+}
+
+[data-theme='geist'] blockquote {
+  font-style: normal;
+}
+
+/* Geist UI uses ~6–8px corners on UI surfaces — soften the otherwise
+ * square code blocks, inline code, and callouts to match. */
+[data-theme='geist'] code {
+  border-radius: 4px;
+}
+
+[data-theme='geist'] pre,
+[data-theme='geist'] .shiki {
+  border-radius: 6px;
+}
+
+[data-theme='geist'] .doc-callout {
+  border-radius: 8px;
+}
+
+[data-theme='geist'] .index-form-input,
+[data-theme='geist'] .index-form-submit {
+  border-radius: 6px;
+}
+
+[data-theme='geist'] .doc-callout-title {
+  font-style: normal;
+}
+
+/* Plain web-style tables — drop the booktabs heavy top/bottom rules. */
+[data-theme='geist'] thead {
+  border-top: none;
+  border-bottom: 1px solid var(--color-rule-light);
+}
+[data-theme='geist'] tbody tr:last-child {
+  border-bottom: none;
+}
+[data-theme='geist'] tbody tr + tr {
+  border-top: 1px solid var(--color-rule-light);
+}
+
+/* Default list markers instead of LaTeX en-dash / middle-dot. */
+[data-theme='geist'] .doc-body ul,
+[data-theme='geist'] .doc-body ul ul,
+[data-theme='geist'] .doc-body ul ul ul {
+  list-style-type: disc;
+}
+[data-theme='geist'] .doc-body ul ul {
+  list-style-type: circle;
+}
+[data-theme='geist'] .doc-body ul ul ul {
+  list-style-type: square;
 }
 
 /* ── Base ── */
@@ -80,9 +323,14 @@ h6 {
   font-family: var(--font-serif);
   font-weight: 700;
   line-height: 1.3;
-  color: var(--color-text);
+  color: var(--color-heading);
   margin-top: 2em;
   margin-bottom: 0.6em;
+  /* Trim the line-box leading above the cap height and below the alphabetic
+   * baseline so headings sit at predictable optical distances from
+   * surrounding elements. Progressive enhancement — older browsers ignore
+   * the declaration and use the default line-box padding. */
+  text-box: trim-both cap alphabetic;
 }
 
 h1 {
@@ -612,7 +860,7 @@ figcaption {
 .doc-frontmatter h1 {
   font-size: 2rem;
   margin-top: 0;
-  margin-bottom: 0.3em;
+  margin-bottom: 0.5em;
   line-height: 1.25;
 }
 
