@@ -83,6 +83,74 @@ type Fetched = {
   siblings: Sibling[] | null
 }
 
+function decodeBase64Content(content: string): string {
+  const binary = atob(content.replace(/\n/g, ''))
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+  return new TextDecoder('utf-8').decode(bytes)
+}
+
+async function contentSha(content: string): Promise<string> {
+  const bytes = new TextEncoder().encode(content)
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  return `raw:${[...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')}`
+}
+
+async function fetchRawGithub(s: Source.GitHubSource): Promise<Fetched> {
+  const res = await fetch(Source.rawUrl(s), {
+    headers: { 'User-Agent': 'stig' },
+  })
+  if (!res.ok) {
+    if (res.status === 404)
+      throw new Error(`File not found on GitHub: ${s.owner}/${s.repo}@${s.ref}/${s.path}`)
+    throw new Error(`GitHub raw error (${res.status}) fetching ${s.path}`)
+  }
+
+  const content = await res.text()
+  return {
+    content,
+    sha: await contentSha(content),
+    filename: s.path.split('/').at(-1) ?? s.path,
+    date: null,
+    description: null,
+    siblings: null,
+  }
+}
+
+async function fetchRawRepoReadme(s: Source.GitHubRepoSource): Promise<Fetched> {
+  const candidates = ['README.md', 'README.mdx', 'README.markdown', 'README']
+  let lastStatus: number | null = null
+
+  for (const path of candidates) {
+    const source: Source.GitHubSource = {
+      kind: 'github',
+      owner: s.owner,
+      repo: s.repo,
+      ref: 'HEAD',
+      path,
+    }
+    const res = await fetch(Source.rawUrl(source), {
+      headers: { 'User-Agent': 'stig' },
+    })
+    if (res.ok) {
+      const content = await res.text()
+      return {
+        content,
+        sha: await contentSha(content),
+        filename: path,
+        date: null,
+        description: null,
+        siblings: null,
+      }
+    }
+    lastStatus = res.status
+    if (res.status !== 404) break
+  }
+
+  if (lastStatus && lastStatus !== 404)
+    throw new Error(`GitHub raw error (${lastStatus}) fetching repo README`)
+  throw new Error(`No README found in ${s.owner}/${s.repo}`)
+}
+
 /** Fetch a markdown file from GitHub via the contents API (gives us SHA + content in one call). */
 async function fetchGithub(s: Source.GitHubSource): Promise<Fetched> {
   const path = s.path.split('/').map(encodeURIComponent).join('/')
@@ -102,7 +170,7 @@ async function fetchGithub(s: Source.GitHubSource): Promise<Fetched> {
   if (!contentRes.ok) {
     if (contentRes.status === 404)
       throw new Error(`File not found on GitHub: ${s.owner}/${s.repo}@${s.ref}/${s.path}`)
-    throw new Error(`GitHub API error (${contentRes.status}) fetching ${s.path}`)
+    return fetchRawGithub(s)
   }
   const data = (await contentRes.json()) as {
     content?: string
@@ -121,10 +189,8 @@ async function fetchGithub(s: Source.GitHubSource): Promise<Fetched> {
     date = commits[0]?.commit?.committer?.date ?? null
   }
 
-  const binary = atob(data.content.replace(/\n/g, ''))
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
   return {
-    content: new TextDecoder('utf-8').decode(bytes),
+    content: decodeBase64Content(data.content),
     sha: data.sha,
     filename: data.name,
     date,
@@ -141,7 +207,7 @@ async function fetchRepo(s: Source.GitHubRepoSource): Promise<Fetched> {
   })
   if (!res.ok) {
     if (res.status === 404) throw new Error(`No README found in ${s.owner}/${s.repo}`)
-    throw new Error(`GitHub API error (${res.status}) fetching repo README`)
+    return fetchRawRepoReadme(s)
   }
   const data = (await res.json()) as {
     content?: string
@@ -169,10 +235,8 @@ async function fetchRepo(s: Source.GitHubRepoSource): Promise<Fetched> {
     date = commits[0]?.commit?.committer?.date ?? null
   }
 
-  const binary = atob(data.content.replace(/\n/g, ''))
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
   return {
-    content: new TextDecoder('utf-8').decode(bytes),
+    content: decodeBase64Content(data.content),
     sha: data.sha,
     filename: data.name,
     date,
@@ -444,5 +508,3 @@ export async function fetchDocument(source: Source.Source): Promise<Document> {
     siblings,
   }
 }
-
-
